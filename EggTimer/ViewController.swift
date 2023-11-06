@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import AVFoundation
 
 class ViewController: UIViewController {
     
@@ -22,8 +23,11 @@ class ViewController: UIViewController {
     var totalTime = 0
     var secondsPassed = 0
     
+    var player: AVAudioPlayer?
+    
     // Действие, вызываемое при выборе уровня готовности
     @IBAction func hardnessSelected(_ sender: UIButton) {
+        
         // Отменить предыдущий таймер, если он существует
         timer.invalidate()
         
@@ -33,25 +37,41 @@ class ViewController: UIViewController {
         // Получить общее время приготовления из словаря eggTimes
         totalTime = eggTimes[hardness]!
         
+        progressBar.progress = 0.0
+        secondsPassed = 0
+        titleLabel.text = hardness
+        
         // Создать новый таймер и запланировать вызов updateTimer() каждую секунду
         timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
     }
     
+    // Функция, проигрывает мелодию по готовности приготовления
+    func playSound() {
+        if let path = Bundle.main.path(forResource: "alarm_sound", ofType:"mp3") {
+            let url = URL(fileURLWithPath: path)
+            player = try! AVAudioPlayer(contentsOf: url)
+            player?.play()
+        }
+    }
+    
     // Функция, вызываемая таймером для обновления прогресса приготовления
     @objc func updateTimer() {
-        if secondsPassed < totalTime {
+        if secondsPassed <= totalTime {
+            
             // Вычислить процент завершения
-            let percentageProgress = secondsPassed / totalTime
+            let percentageProgress = Float(secondsPassed) / Float(totalTime)
             
-            // // TODO: Пофиксить прогресс бар
-            progressBar.progress = Float(percentageProgress)
-            
+            // TODO: Пофиксить прогресс бар ✅
+            progressBar.progress = percentageProgress
+
             // Увеличить прошедшее время
             secondsPassed += 1
+            
         } else {
-            // Время приготовления завершено, отменить таймер и обновить надпись
+            // Время приготовления завершено, отменить таймер, обновить надпись и вкл мелодию
             timer.invalidate()
             titleLabel.text = "DONE!"
+            playSound()
         }
     }
 }
